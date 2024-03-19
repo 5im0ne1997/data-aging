@@ -46,7 +46,7 @@ do
 
                 #Se dovesse essere presente solo 1 file non elimina nulla
                 #Se il numero totale di file meno il numero di file più vecchi di 30 giorni è uguale a zero non elimina nulla
-                if [ $(find . | wc -l) -ge 1 ] && [ $(($(find . | wc -l) - $(find . -mtime +30 | wc -l))) -gt 0 ]
+                if [ $(find . | wc -l) -gt 1 ] && [ $(($(find . | wc -l) - $(find . -mtime +30 | wc -l))) -gt 0 ]
                 then
 
                     #Elimina tutti i file più vecchi di 30 giorni
