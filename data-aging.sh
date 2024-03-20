@@ -20,15 +20,15 @@ do
 
         #Verifica il modello e associa la regex corretta per il nome dei file
         case ${MODEL} in
-            "checkpoint")
+            "checkpoint/")
 
                 #Lista tutti i file, con sed vado a cercare il nome del backup togliendo il residuo. Con sort -u tolgo le righe duplicate
                 BK_NAMES=( $(ls | sed -E 's/^backup_(.*)_.*_.*_.*_.*_.*_.*\.tgz/\1/g' | sort -u) )
                 ;;
-            "fauth")
+            "fauth/")
                 BK_NAMES=( $(ls | sed -E 's/(^.*)_.*_.*-.*\.conf/\1/g' | sort -u) )
                 ;;
-            "ise")
+            "ise/")
                 BK_NAMES=( $(ls | sed -E 's/Backup_(.*)-.*-.*\.tar\.gpg/\1/g' | sort -u) )
                 ;;
         esac
