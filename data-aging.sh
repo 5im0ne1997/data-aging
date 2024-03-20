@@ -23,14 +23,13 @@ do
             "checkpoint/")
 
                 #Lista tutti i file, con sed vado a cercare il nome del backup togliendo il residuo. Con sort -u tolgo le righe duplicate
-                BK_NAMES=( $(ls | sed -E 's/^backup_(.*)_.*_.*_.*_.*_.*_.*\.tgz/\1/g' | sort -u) )
+                BK_NAMES=( $(ls | sed -E 's/(^.*)_.*_.*_.*_.*_.*_.*\.tgz/\1/g' | sort -u) )
                 ;;
             "fauth/")
                 BK_NAMES=( $(ls | sed -E 's/(^.*)_.*_.*-.*\.conf/\1/g' | sort -u) )
                 ;;
-            "ise/")
-                BK_NAMES=( $(ls | sed -E 's/Backup_(.*)-.*-.*\.tar\.gpg/\1/g' | sort -u) )
-                ;;
+            "cp_small/")
+                BK_NAMES=( $(ls | sed -E 's/(^.*)_.*_.*_.*_.*_.*\.zip/\1/g' | sort -u) )
         esac
 
         #Per sf-storage non serve nessuna regex
@@ -38,11 +37,11 @@ do
         then
 
             #Lista le directory univoce per ogni sf-storage
-            for FW in $(ls -d */)
+            for BK in $(ls -d */)
             do
 
                 #Entra nella sotto directory backup di ogni sf-storage
-                pushd "${FW}/backups" &>/dev/null
+                pushd "${BK}/backups" &>/dev/null
 
                 #Se dovesse essere presente solo 1 file non elimina nulla
                 #Se il numero totale di file meno il numero di file più vecchi di 30 giorni è uguale a zero non elimina nulla
@@ -56,6 +55,19 @@ do
                 #Ritorno alla directory sf-storage
                 popd &>/dev/null
             done
+
+        #Per ise non serve nessuna regex
+        elif [ ${MODEL} == "ise/" ]
+        then
+
+            #Se dovesse essere presente solo 1 file non elimina nulla
+            #Se il numero totale di file meno il numero di file più vecchi di 30 giorni è uguale a zero non elimina nulla
+            if [ $(find . | wc -l) -gt 1 ] && [ $(($(find . | wc -l) - $(find . -mtime +30 | wc -l))) -gt 0 ]
+            then
+
+                #Elimina tutti i file più vecchi di 30 giorni
+                find . -mtime +30 -exec rm -f {} \; &>/dev/null
+            fi
 
         #Se l'elenco dei backup fosse vuoto non faccio nulla
         elif [ -n ${BK_NAMES} ]
