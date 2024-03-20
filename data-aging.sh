@@ -22,14 +22,14 @@ do
         case ${MODEL} in
             "checkpoint")
 
-                #Lista tutti i file, con sed favo a cercare il nome del firewall togliendo il residuo. Con sort -u tolgo le righe duplicate
-                FW_NAMES=( $(ls | sed -E 's/^backup_-(.*)_.*_.*_.*_.*_.*_.*\.tgz/\1/g' | sort -u) )
+                #Lista tutti i file, con sed vado a cercare il nome del backup togliendo il residuo. Con sort -u tolgo le righe duplicate
+                BK_NAMES=( $(ls | sed -E 's/^backup_-(.*)_.*_.*_.*_.*_.*_.*\.tgz/\1/g' | sort -u) )
                 ;;
             "fauth")
-                FW_NAMES=( $(ls | sed -E 's/(^.*)_.*_.*-.*\.conf/\1/g' | sort -u) )
+                BK_NAMES=( $(ls | sed -E 's/(^.*)_.*_.*-.*\.conf/\1/g' | sort -u) )
                 ;;
             "ise")
-                FW_NAMES=( $(ls | sed -E 's/Backup_(.*)-.*-.*\.tar\.gpg/\1/g' | sort -u) )
+                BK_NAMES=( $(ls | sed -E 's/Backup_(.*)-.*-.*\.tar\.gpg/\1/g' | sort -u) )
                 ;;
         esac
 
@@ -57,21 +57,21 @@ do
                 popd &>/dev/null
             done
 
-        #Se l'elenco dei firewall fosse vuoto non faccio nulla
-        elif [ -n ${FW_NAMES} ]
+        #Se l'elenco dei backup fosse vuoto non faccio nulla
+        elif [ -n ${BK_NAMES} ]
         then
 
             #Per ogni firewall elimino i file
-            for FW in ${FW_NAMES[@]}
+            for BK in ${BK_NAMES[@]}
             do
 
                 #Se dovesse essere presente solo 1 file non elimina nulla
                 #Se il numero totale di file meno il numero di file più vecchi di 30 giorni è uguale a zero non elimina nulla
-                if [ $(find . -name "*${FW}*" | wc -l) -gt 1 ] && [ $(($(find . -name "*${FW}*" | wc -l) - $(find . -name "*${FW}*" -mtime +30 | wc -l))) -gt 0 ]
+                if [ $(find . -name "*${BK}*" | wc -l) -gt 1 ] && [ $(($(find . -name "*${BK}*" | wc -l) - $(find . -name "*${BK}*" -mtime +30 | wc -l))) -gt 0 ]
                 then
 
                     #Elimina tutti i file più vecchi di 30 giorni
-                    find . -name "*${FW}*" -mtime +30 -exec rm -f {} \; &>/dev/null
+                    find . -name "*${BK}*" -mtime +30 -exec rm -f {} \; &>/dev/null
                 fi
             done
         fi
@@ -80,7 +80,7 @@ do
         popd &>/dev/null
 
         #Elimino la variabile ad ogni ciclo
-        unset FW_NAMES
+        unset BK_NAMES
     done
 
     #Torno nella directory dei backup per cambiare cliente
