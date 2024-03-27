@@ -30,26 +30,35 @@ do
                 ;;
             "cp_small/")
                 BK_NAMES=( $(ls | sed -E 's/(^.*)_.*_.*_.*_.*_.*\.zip/\1/g' | sort -u) )
+                ;;
         esac
 
-        #Per sf-storage non serve nessuna regex
-        if [ ${MODEL} == "sf-storage/" ]
+        #Per sf-storage e clearpass non serve nessuna regex
+        if [ ${MODEL} == "sf-storage/" ] || [ ${MODEL} == "clearpass/" ]
         then
 
             #Lista le directory univoce per ogni sf-storage
             for BK in $(ls -d */)
             do
 
-                #Entra nella sotto directory backup di ogni sf-storage
-                pushd "${BK}/backups" &>/dev/null
+                #Entra nella sotto directory backup di ogni sf-storage oppure clearpass
+                
+                case ${MODEL} in
+                    "sf-storage/")
+                        pushd "${BK}/backups" &>/dev/null
+                        ;;
+                    "clearpass/")
+                        pushd "${BK}" &>/dev/null
+                        ;;
+                esac
 
                 #Se dovesse essere presente solo 1 file non elimina nulla
                 #Se il numero totale di file meno il numero di file più vecchi di 30 giorni è uguale a zero non elimina nulla
-                if [ $(find . | wc -l) -gt 1 ] && [ $(($(find . | wc -l) - $(find . -mtime +30 | wc -l))) -gt 0 ]
+                if [ $(find . -type f | wc -l) -gt 1 ] && [ $(($(find . -type f | wc -l) - $(find . -type f -mtime +30 | wc -l))) -gt 0 ]
                 then
 
                     #Elimina tutti i file più vecchi di 30 giorni
-                    find . -mtime +30 -exec rm -f {} \; &>/dev/null
+                    find . -type f -mtime +30 -exec rm -f {} \; &>/dev/null
                 fi
 
                 #Ritorno alla directory sf-storage
@@ -62,11 +71,11 @@ do
 
             #Se dovesse essere presente solo 1 file non elimina nulla
             #Se il numero totale di file meno il numero di file più vecchi di 30 giorni è uguale a zero non elimina nulla
-            if [ $(find . | wc -l) -gt 1 ] && [ $(($(find . | wc -l) - $(find . -mtime +30 | wc -l))) -gt 0 ]
+            if [ $(find . -type f | wc -l) -gt 1 ] && [ $(($(find . -type f | wc -l) - $(find . -type f -mtime +30 | wc -l))) -gt 0 ]
             then
 
                 #Elimina tutti i file più vecchi di 30 giorni
-                find . -mtime +30 -exec rm -f {} \; &>/dev/null
+                find . -type f -mtime +30 -exec rm -f {} \; &>/dev/null
             fi
 
         #Se l'elenco dei backup fosse vuoto non faccio nulla
@@ -79,11 +88,11 @@ do
 
                 #Se dovesse essere presente solo 1 file non elimina nulla
                 #Se il numero totale di file meno il numero di file più vecchi di 30 giorni è uguale a zero non elimina nulla
-                if [ $(find . -name "*${BK}*" | wc -l) -gt 1 ] && [ $(($(find . -name "*${BK}*" | wc -l) - $(find . -name "*${BK}*" -mtime +30 | wc -l))) -gt 0 ]
+                if [ $(find . -type f -name "*${BK}*" | wc -l) -gt 1 ] && [ $(($(find . -type f -name "*${BK}*" | wc -l) - $(find . -type f -name "*${BK}*" -mtime +30 | wc -l))) -gt 0 ]
                 then
 
                     #Elimina tutti i file più vecchi di 30 giorni
-                    find . -name "*${BK}*" -mtime +30 -exec rm -f {} \; &>/dev/null
+                    find . -type f -name "*${BK}*" -mtime +30 -exec rm -f {} \; &>/dev/null
                 fi
             done
         fi
