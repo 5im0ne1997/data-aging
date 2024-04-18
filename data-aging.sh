@@ -31,34 +31,42 @@ do
             "cp_small/")
                 BK_NAMES=( $(ls | sed -E 's/(^.*)_.*_.*_.*_.*_.*\.zip/\1/g' | sort -u) )
                 ;;
+            "libraesva/")
+                BK_NAMES=( $(ls | sed -E 's/(^.*)-.*-.*\.gpg/\1/g' | sort -u) )
+                ;;
+            "netapp/")
+                BK_NAMES=( $(ls | sed -E 's/(^.*)\..*-.*_.*\.7z/\1/g' | sort -u) )
+                ;;
         esac
 
         #Per sf-storage e clearpass non serve nessuna regex
         if [ ${MODEL} == "sf-storage/" ] || [ ${MODEL} == "clearpass/" ]
         then
 
-            #Lista le directory univoce per ogni sf-storage
+            #Lista le directory univoche per ogni sf-storage
             for BK in $(ls -d */)
             do
 
-                #Entra nella sotto directory backup di ogni sf-storage oppure clearpass
+                #Per sf-storage entra in ogni sotto directory univoca aggiungendo backup, per gli altri entra nella sotto directory univoca
                 
                 case ${MODEL} in
                     "sf-storage/")
                         pushd "${BK}/backups" &>/dev/null
                         ;;
-                    "clearpass/")
+                    *)
                         pushd "${BK}" &>/dev/null
                         ;;
                 esac
-
+                RETENTION="+30"
+                ALL_BACKUP=$(find . -type f | wc -l)
+                OLD_BACKUP=$(find . -type f -mtime ${RETENTION} | wc -l)
                 #Se dovesse essere presente solo 1 file non elimina nulla
                 #Se il numero totale di file meno il numero di file più vecchi di 30 giorni è uguale a zero non elimina nulla
-                if [ $(find . -type f | wc -l) -gt 1 ] && [ $(($(find . -type f | wc -l) - $(find . -type f -mtime +30 | wc -l))) -gt 0 ]
+                if [ ${ALL_BACKUP} -gt 1 ] && [ $((${ALL_BACKUP} - ${OLD_BACKUP})) -gt 0 ]
                 then
 
                     #Elimina tutti i file più vecchi di 30 giorni
-                    find . -type f -mtime +30 -exec rm -f {} \; &>/dev/null
+                    find . -type f -mtime ${RETENTION} -exec rm -f {} \; &>/dev/null
                 fi
 
                 #Ritorno alla directory sf-storage
@@ -68,14 +76,16 @@ do
         #Per ise non serve nessuna regex
         elif [ ${MODEL} == "ise/" ]
         then
-
+            RETENTION="+30"
+            ALL_BACKUP=$(find . -type f | wc -l)
+            OLD_BACKUP=$(find . -type f -mtime ${RETENTION} | wc -l)
             #Se dovesse essere presente solo 1 file non elimina nulla
             #Se il numero totale di file meno il numero di file più vecchi di 30 giorni è uguale a zero non elimina nulla
-            if [ $(find . -type f | wc -l) -gt 1 ] && [ $(($(find . -type f | wc -l) - $(find . -type f -mtime +30 | wc -l))) -gt 0 ]
+            if [ ${ALL_BACKUP} -gt 1 ] && [ $((${ALL_BACKUP} - ${OLD_BACKUP})) -gt 0 ]
             then
 
                 #Elimina tutti i file più vecchi di 30 giorni
-                find . -type f -mtime +30 -exec rm -f {} \; &>/dev/null
+                find . -type f -mtime ${RETENTION} -exec rm -f {} \; &>/dev/null
             fi
 
         #Se l'elenco dei backup fosse vuoto non faccio nulla
@@ -85,14 +95,33 @@ do
             #Per ogni firewall elimino i file
             for BK in ${BK_NAMES[@]}
             do
-
+                if [ ${MODEL} == "netapp/" ]
+                then
+                    case $(echo ${BK} | sed -E 's/.*\.(.*)/\1/g') in
+                        "8hour")
+                            RETENTION="+1"
+                            ;;
+                        "daily")
+                            RETENTION="+7"
+                            ;;
+                        "weekly")
+                            RETENTION="+30"
+                            ;;
+                        *)
+                            RETENTION="+30"
+                            ;;
+                else
+                    RETENTION="+30"
+                fi
+                ALL_BACKUP=$(find . -type f -name "*${BK}*" | wc -l)
+                OLD_BACKUP=$(find . -type f -name "*${BK}*" -mtime ${RETENTION} | wc -l)
                 #Se dovesse essere presente solo 1 file non elimina nulla
                 #Se il numero totale di file meno il numero di file più vecchi di 30 giorni è uguale a zero non elimina nulla
-                if [ $(find . -type f -name "*${BK}*" | wc -l) -gt 1 ] && [ $(($(find . -type f -name "*${BK}*" | wc -l) - $(find . -type f -name "*${BK}*" -mtime +30 | wc -l))) -gt 0 ]
+                if [ ${ALL_BACKUP} -gt 1 ] && [ $((${ALL_BACKUP} - ${OLD_BACKUP})) -gt 0 ]
                 then
 
                     #Elimina tutti i file più vecchi di 30 giorni
-                    find . -type f -name "*${BK}*" -mtime +30 -exec rm -f {} \; &>/dev/null
+                    find . -type f -name "*${BK}*" -mtime ${RETENTION} -exec rm -f {} \; &>/dev/null
                 fi
             done
         fi
