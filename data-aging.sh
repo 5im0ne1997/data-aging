@@ -1,28 +1,28 @@
 #!/bin/bash
 
-#Directory dove risiedono i backup
+#Directory backup
 BASEDIR="/data/"
 
-#Mi sposto all'interno della directory dei backup
+#move to backup directory
 pushd ${BASEDIR} &>/dev/null
 
-#Prende l'elenco di tutti gli IDRS
+#Get customer ID
 for IDRS in $(ls -d */)
 do
-    #Mi sposto dentro alla directory del cliente
+    #Move to customer ID
     pushd ${IDRS} &>/dev/null
 
-    #Prende l'elenco delle tecnologie backuppate
+    #Get list of backupped tecnology
     for MODEL in $(ls -d */)
     do
-        #Entra dentro a ogni directory
+        #Move to any folder
         pushd ${MODEL} &>/dev/null
 
-        #Verifica il modello e associa la regex corretta per il nome dei file
+        #Check the template and associate the correct regex for the filename
         case ${MODEL} in
             "checkpoint/")
 
-                #Lista tutti i file, con sed vado a cercare il nome del backup togliendo il residuo. Con sort -u tolgo le righe duplicate
+                #List all files, with sed I search for the name of the backup by removing the duplicate. With sort -u I remove duplicate rows
                 BK_NAMES=( $(ls | sed -E 's/(^.*)_.*_.*_.*_.*_.*_.*\.tgz/\1/g' | sort -u) )
                 ;;
             "fauth/")
@@ -39,15 +39,15 @@ do
                 ;;
         esac
 
-        #Per sf-storage e clearpass non serve nessuna regex
+        #No regex is needed for sf-storage and clearpass
         if [ ${MODEL} == "sf-storage/" ] || [ ${MODEL} == "clearpass/" ]
         then
 
-            #Lista le directory univoche per ogni sf-storage
+            #List the unique directories for each sf-storage 
             for BK in $(ls -d */)
             do
 
-                #Per sf-storage entra in ogni sotto directory univoca aggiungendo backup, per gli altri entra nella sotto directory univoca
+                #For sf-storage it enters each unique sub-directory by adding backups, for others it enters the unique sub-directory
                 
                 case ${MODEL} in
                     "sf-storage/")
@@ -60,39 +60,39 @@ do
                 RETENTION="+30"
                 ALL_BACKUP=$(find . -type f | wc -l)
                 OLD_BACKUP=$(find . -type f -mtime ${RETENTION} | wc -l)
-                #Se dovesse essere presente solo 1 file non elimina nulla
-                #Se il numero totale di file meno il numero di file più vecchi di 30 giorni è uguale a zero non elimina nulla
+                #If only 1 file is present, do not delete anything
+                #If the total number of files minus the number of files older than 30 days is zero, it does not delete anything
                 if [ ${ALL_BACKUP} -gt 1 ] && [ $((${ALL_BACKUP} - ${OLD_BACKUP})) -gt 0 ]
                 then
 
-                    #Elimina tutti i file più vecchi di 30 giorni
+                    #Deletes all files older than 30 days
                     find . -type f -mtime ${RETENTION} -exec rm -f {} \; &>/dev/null
                 fi
 
-                #Ritorno alla directory sf-storage
+                #Return to the sf-storage directory
                 popd &>/dev/null
             done
 
-        #Per ise non serve nessuna regex
+        #No regex is needed for ise
         elif [ ${MODEL} == "ise/" ]
         then
             RETENTION="+30"
             ALL_BACKUP=$(find . -type f | wc -l)
             OLD_BACKUP=$(find . -type f -mtime ${RETENTION} | wc -l)
-            #Se dovesse essere presente solo 1 file non elimina nulla
-            #Se il numero totale di file meno il numero di file più vecchi di 30 giorni è uguale a zero non elimina nulla
+            #If only 1 file is present, do not delete anything
+            #If the total number of files minus the number of files older than 30 days is zero, it does not delete anything
             if [ ${ALL_BACKUP} -gt 1 ] && [ $((${ALL_BACKUP} - ${OLD_BACKUP})) -gt 0 ]
             then
 
-                #Elimina tutti i file più vecchi di 30 giorni
+                #Deletes all files older than 30 days
                 find . -type f -mtime ${RETENTION} -exec rm -f {} \; &>/dev/null
             fi
 
-        #Se l'elenco dei backup fosse vuoto non faccio nulla
+        #If the backup list were empty, I would do nothing
         elif [ -n ${BK_NAMES} ]
         then
 
-            #Per ogni firewall elimino i file
+            #For each firewall I delete files
             for BK in ${BK_NAMES[@]}
             do
                 if [ ${MODEL} == "netapp/" ]
@@ -115,25 +115,25 @@ do
                 fi
                 ALL_BACKUP=$(find . -type f -name "*${BK}*" | wc -l)
                 OLD_BACKUP=$(find . -type f -name "*${BK}*" -mtime ${RETENTION} | wc -l)
-                #Se dovesse essere presente solo 1 file non elimina nulla
-                #Se il numero totale di file meno il numero di file più vecchi di 30 giorni è uguale a zero non elimina nulla
+                #If only 1 file is present, do not delete anything
+                #If the total number of files minus the number of files older than 30 days is zero, it does not delete anything
                 if [ ${ALL_BACKUP} -gt 1 ] && [ $((${ALL_BACKUP} - ${OLD_BACKUP})) -gt 0 ]
                 then
 
-                    #Elimina tutti i file più vecchi di 30 giorni
+                    #Deletes all files older than 30 days
                     find . -type f -name "*${BK}*" -mtime ${RETENTION} -exec rm -f {} \; &>/dev/null
                 fi
             done
         fi
 
-        #Ritorno alla directory del cliente per cambiare tecnologia
+        #Return to customer directory to change technology
         popd &>/dev/null
 
-        #Elimino la variabile ad ogni ciclo
+        #I delete the variable at each cycle
         unset BK_NAMES
     done
 
-    #Torno nella directory dei backup per cambiare cliente
+    #Returning to the backup directory to change clients
     popd &>/dev/null
 done
 
